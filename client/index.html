@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>성경 PPT 생성기</title>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0e17; --surface: #1a1828; --border: #2e2b45;
+    --gold: #c9a84c; --gold-light: #e8c97a; --text: #ede8d9; --muted: #7a7590;
+  }
+  body { background:var(--bg); color:var(--text); font-family:'Noto Sans KR',sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:40px 20px 80px; }
+  body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0; background:radial-gradient(ellipse at 20% 20%,rgba(123,97,255,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(201,168,76,.06) 0%,transparent 50%); }
+  .container { position:relative; z-index:1; width:100%; max-width:780px; }
+  header { text-align:center; margin-bottom:44px; }
+  .logo { font-size:22px; color:var(--gold); margin-bottom:12px; opacity:.8; }
+  h1 { font-family:'Noto Serif KR',serif; font-size:2rem; font-weight:700; }
+  h1 span { color:var(--gold); }
+  .subtitle { margin-top:8px; font-size:.85rem; color:var(--muted); }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px 30px; margin-bottom:18px; }
+  label.field-label { display:block; font-size:.75rem; font-weight:500; color:var(--gold); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+  textarea, select { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:9px; color:var(--text); font-family:'Noto Sans KR',sans-serif; font-size:.95rem; padding:11px 13px; outline:none; transition:border-color .2s; appearance:none; }
+  textarea { resize:vertical; min-height:110px; line-height:1.75; }
+  textarea:focus, select:focus { border-color:var(--gold); }
+  textarea::placeholder { color:var(--muted); font-size:.85rem; }
+  .guide { margin-top:14px; padding:12px 14px; background:rgba(201,168,76,.04); border-left:3px solid var(--gold); border-radius:0 8px 8px 0; }
+  .guide-title { font-size:.74rem; color:var(--gold); font-weight:500; margin-bottom:8px; }
+  .guide-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 18px; }
+  .guide-item { display:flex; gap:7px; font-size:.79rem; }
+  .guide-code { font-family:'Courier New',monospace; color:var(--gold-light); white-space:nowrap; flex-shrink:0; }
+  .guide-desc { color:var(--muted); }
+  .opts { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:16px; }
+  .opt-group label { display:block; font-size:.75rem; color:var(--muted); margin-bottom:5px; }
+  .btn-primary { width:100%; background:linear-gradient(135deg,var(--gold),#a8782e); color:#0f0e17; border:none; border-radius:10px; font-family:'Noto Sans KR',sans-serif; font-size:1rem; font-weight:700; padding:14px; cursor:pointer; margin-top:20px; transition:opacity .2s; }
+  .btn-primary:hover { opacity:.88; }
+  .btn-primary:disabled { opacity:.35; cursor:not-allowed; }
+  .preview-card { display:none; }
+  .preview-card.visible { display:block; }
+  .section-label { font-size:.74rem; color:var(--gold); font-weight:500; letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; }
+  .slide-list { display:flex; flex-direction:column; gap:8px; max-height:460px; overflow-y:auto; }
+  .slide-item { display:flex; align-items:flex-start; gap:11px; padding:12px 14px; background:var(--bg); border-radius:8px; border:1px solid var(--border); }
+  .slide-num { font-size:.68rem; color:var(--muted); background:var(--surface); padding:2px 7px; border-radius:4px; flex-shrink:0; margin-top:2px; }
+  .slide-ref { font-size:.76rem; color:var(--gold); font-weight:500; margin-bottom:3px; }
+  .slide-text { font-family:'Noto Serif KR',serif; font-size:.88rem; color:var(--text); line-height:1.6; }
+  .err-item { background:rgba(255,80,80,.07); border:1px solid rgba(255,80,80,.2); border-radius:8px; padding:9px 13px; font-size:.82rem; color:#ff8888; }
+  .btn-dl { width:100%; background:transparent; color:var(--gold); border:1px solid var(--gold); border-radius:10px; font-family:'Noto Sans KR',sans-serif; font-size:.95rem; font-weight:500; padding:12px; cursor:pointer; margin-top:13px; transition:background .2s; }
+  .btn-dl:hover { background:rgba(201,168,76,.08); }
+  .btn-dl:disabled { opacity:.4; cursor:not-allowed; }
+  .status { text-align:center; font-size:.81rem; color:var(--muted); margin-top:9px; min-height:16px; }
+  .status.ok { color:#7ecb85; } .status.err { color:#ff8888; } .status.loading { color:var(--gold); }
+  footer { margin-top:50px; font-size:.72rem; color:var(--muted); opacity:.4; text-align:center; }
+  @media(max-width:500px){ .opts{grid-template-columns:1fr;} .guide-grid{grid-template-columns:1fr;} h1{font-size:1.6rem;} }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">✦ ✦ ✦</div>
+    <h1>성경 <span>PPT</span> 생성기</h1>
+    <p class="subtitle">구절 입력 → 미리보기 → PPT 다운로드</p>
+  </header>
+
+  <div class="card">
+    <label class="field-label">성경 구절 입력</label>
+    <textarea id="verseInput" placeholder="예시:
+요3:16
+창세기 1:1-3
+시편 23편
+마5:3-12
+롬8:28,31"></textarea>
+
+    <div class="guide">
+      <div class="guide-title">📖 입력 형식</div>
+      <div class="guide-grid">
+        <div class="guide-item"><span class="guide-code">요3:16</span><span class="guide-desc">약어+장:절</span></div>
+        <div class="guide-item"><span class="guide-code">요한복음 3:16</span><span class="guide-desc">전체 책명</span></div>
+        <div class="guide-item"><span class="guide-code">창1:1-3</span><span class="guide-desc">절 범위</span></div>
+        <div class="guide-item"><span class="guide-code">시편 23편</span><span class="guide-desc">장 전체</span></div>
+        <div class="guide-item"><span class="guide-code">롬8:28,31</span><span class="guide-desc">복수 절</span></div>
+        <div class="guide-item"><span class="guide-code">마5:3-12</span><span class="guide-desc">범위(팔복)</span></div>
+      </div>
+    </div>
+
+    <div class="opts">
+      <div class="opt-group">
+        <label>성경 버전</label>
+        <select id="version">
+          <option value="개역한글">개역한글</option>
+          <option value="개역개정">개역개정</option>
+        </select>
+      </div>
+      <div class="opt-group">
+        <label>슬라이드 배경</label>
+        <select id="bgStyle">
+          <option value="dark">다크 (검정/금색)</option>
+          <option value="white">화이트</option>
+          <option value="blue">딥 블루</option>
+          <option value="warm">따뜻한 크림</option>
+        </select>
+      </div>
+      <div class="opt-group">
+        <label>슬라이드 구성</label>
+        <select id="splitMode">
+          <option value="verse">절마다 한 슬라이드</option>
+          <option value="all">전체 한 슬라이드</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="parseBtn" onclick="buildSlides()">📋 미리보기 생성</button>
+    <div class="status" id="parseStatus"></div>
+  </div>
+
+  <div class="card preview-card" id="previewCard">
+    <div class="section-label">슬라이드 미리보기</div>
+    <div class="slide-list" id="slideList"></div>
+    <button class="btn-dl" id="dlBtn" onclick="generatePPT()">⬇️ PPT 다운로드 (.pptx)</button>
+    <div class="status" id="dlStatus"></div>
+  </div>
+</div>
+<footer>성경 PPT 생성기 · DB 연동판</footer>
+
+<script>
+const SERVER = 'http://localhost:3000';
+
+// ── 책 이름 매핑 ────────────────────────────
+const BOOK_MAP = {
+  '창':'창세기','출':'출애굽기','레':'레위기','민':'민수기','신':'신명기',
+  '수':'여호수아','삿':'사사기','룻':'룻기','삼상':'사무엘상','삼하':'사무엘하',
+  '왕상':'열왕기상','왕하':'열왕기하','대상':'역대상','대하':'역대하',
+  '스':'에스라','느':'느헤미야','에':'에스더','욥':'욥기','시':'시편',
+  '잠':'잠언','전':'전도서','아':'아가','사':'이사야','렘':'예레미야',
+  '애':'예레미야애가','겔':'에스겔','단':'다니엘','호':'호세아','욜':'요엘',
+  '암':'아모스','옵':'오바댜','욘':'요나','미':'미가','나':'나훔',
+  '합':'하박국','습':'스바냐','학':'학개','슥':'스가랴','말':'말라기',
+  '마':'마태복음','막':'마가복음','눅':'누가복음','요':'요한복음',
+  '행':'사도행전','롬':'로마서','고전':'고린도전서','고후':'고린도후서',
+  '갈':'갈라디아서','엡':'에베소서','빌':'빌립보서','골':'골로새서',
+  '살전':'데살로니가전서','살후':'데살로니가후서','딤전':'디모데전서',
+  '딤후':'디모데후서','딛':'디도서','몬':'빌레몬서','히':'히브리서',
+  '약':'야고보서','벧전':'베드로전서','벧후':'베드로후서','요일':'요한일서',
+  '요이':'요한이서','요삼':'요한삼서','유':'유다서','계':'요한계시록',
+};
+
+function findBook(raw) {
+  const s = raw.trim();
+  if (BOOK_MAP[s]) return BOOK_MAP[s];
+  // 전체 이름으로 검색
+  const values = Object.values(BOOK_MAP);
+  return values.find(v => v === s || v.startsWith(s)) || null;
+}
+
+// ── 입력 파싱 ────────────────────────────────
+function parseInput(raw) {
+  const results = [];
+  const lines = raw.trim().split('\n').map(l => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    const m = line.match(/^(.+?)\s*(\d+)\s*(?:장|편)?\s*(?::\s*(\d[\d\-,]*)(?:절)?)?$/);
+    if (!m) { results.push({ error: `형식 오류: "${line}"` }); continue; }
+    const book = findBook(m[1].trim());
+    if (!book) { results.push({ error: `책 이름 없음: "${m[1].trim()}"` }); continue; }
+    const ch = parseInt(m[2]);
+    let vList = null;
+    if (m[3]) {
+      const vs = m[3];
+      if (vs.includes('-')) {
+        const [s, e] = vs.split('-').map(Number);
+        vList = Array.from({ length: e - s + 1 }, (_, i) => s + i);
+      } else if (vs.includes(',')) {
+        vList = vs.split(',').map(Number).filter(n => !isNaN(n));
+      } else {
+        vList = [parseInt(vs)];
+      }
+    }
+    results.push({ book, ch, vList });
+  }
+  return results;
+}
+
+// ── 서버에서 구절 가져오기 ───────────────────
+async function fetchVerses(book, ch, vList, version) {
+  if (vList) {
+    // 절 범위
+    const from = Math.min(...vList);
+    const to   = Math.max(...vList);
+    const res  = await fetch(`${SERVER}/range?book=${encodeURIComponent(book)}&chapter=${ch}&from=${from}&to=${to}&version=${version}`);
+    const rows = await res.json();
+    // 콤마로 지정된 절만 필터
+    if (vList.length !== (to - from + 1)) {
+      return rows.filter(r => vList.includes(r.verse));
+    }
+    return rows;
+  } else {
+    // 장 전체
+    const res  = await fetch(`${SERVER}/chapter?book=${encodeURIComponent(book)}&chapter=${ch}&version=${version}`);
+    return await res.json();
+  }
+}
+
+// ── 슬라이드 빌드 ───────────────────────────
+let slidesData = [];
+
+async function buildSlides() {
+  const input     = document.getElementById('verseInput').value;
+  const version   = document.getElementById('version').value;
+  const splitMode = document.getElementById('splitMode').value;
+  const slideList = document.getElementById('slideList');
+  const previewCard = document.getElementById('previewCard');
+  const parseStatus = document.getElementById('parseStatus');
+  const btn = document.getElementById('parseBtn');
+
+  if (!input.trim()) {
+    parseStatus.textContent = '구절을 입력해주세요.';
+    parseStatus.className = 'status err';
+    return;
+  }
+
+  btn.disabled = true;
+  slidesData = [];
+  slideList.innerHTML = '';
+  previewCard.classList.remove('visible');
+  parseStatus.textContent = '불러오는 중...';
+  parseStatus.className = 'status loading';
+
+  const parsed = parseInput(input);
+  let num = 1;
+
+  for (const item of parsed) {
+    if (item.error) {
+      const el = document.createElement('div');
+      el.className = 'err-item';
+      el.textContent = '⚠️ ' + item.error;
+      slideList.appendChild(el);
+      continue;
+    }
+
+    const { book, ch, vList } = item;
+    const rows = await fetchVerses(book, ch, vList, version);
+
+    if (!rows.length) {
+      const el = document.createElement('div');
+      el.className = 'err-item';
+      el.textContent = `⚠️ ${book} ${ch}장 — DB에 데이터 없음`;
+      slideList.appendChild(el);
+      continue;
+    }
+
+    if (splitMode === 'verse') {
+      for (const row of rows) {
+        const ref     = `${book} ${ch}:${row.verse}`;
+        const display = `${row.verse}  ${row.content}`;
+        slideList.appendChild(mkEl(num, ref, display));
+        slidesData.push({ ref, text: display, version });
+        num++;
+      }
+    } else {
+      const ref     = rows.length > 1
+        ? `${book} ${ch}:${rows[0].verse}~${rows[rows.length-1].verse}`
+        : `${book} ${ch}:${rows[0].verse}`;
+      const lines   = rows.map(r => `${r.verse}  ${r.content}`).join('\n');
+      slideList.appendChild(mkEl(num, ref, lines));
+      slidesData.push({ ref, text: lines, version });
+      num++;
+    }
+  }
+
+  if (slidesData.length > 0) {
+    previewCard.classList.add('visible');
+    parseStatus.textContent = `✓ ${slidesData.length}개 슬라이드 준비 완료`;
+    parseStatus.className = 'status ok';
+  } else {
+    parseStatus.textContent = '슬라이드를 생성하지 못했습니다.';
+    parseStatus.className = 'status err';
+  }
+  btn.disabled = false;
+}
+
+function mkEl(num, ref, text) {
+  const el = document.createElement('div');
+  el.className = 'slide-item';
+  el.innerHTML = `<span class="slide-num">${num}</span><div><div class="slide-ref">${ref}</div><div class="slide-text">${text.replace(/\n/g,'<br>')}</div></div>`;
+  return el;
+}
+
+// ── PPT 생성 ────────────────────────────────
+const THEMES = {
+  dark:  { bg:'0F0E17', text:'EDE8D9', ref:'C9A84C', bar:'2E2B45' },
+  white: { bg:'FFFFFF', text:'1A1828', ref:'7A5A10', bar:'E8E2D0' },
+  blue:  { bg:'0A1628', text:'E8F0FF', ref:'7FB3FF', bar:'1C2E48' },
+  warm:  { bg:'FAF6EE', text:'2C2416', ref:'8B5E2D', bar:'EDE4D0' },
+};
+
+async function generatePPT() {
+  if (!slidesData.length) return;
+  const btn    = document.getElementById('dlBtn');
+  const status = document.getElementById('dlStatus');
+  btn.disabled = true;
+  status.textContent = 'PPT 생성 중...';
+  status.className = 'status loading';
+
+  try {
+    const theme = THEMES[document.getElementById('bgStyle').value] || THEMES.dark;
+    const pptx  = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE';
+
+    for (const slide of slidesData) {
+      const s = pptx.addSlide();
+      s.background = { color: theme.bg };
+      s.addShape(pptx.ShapeType.rect, { x:0, y:0, w:'100%', h:0.07, fill:{color:theme.ref}, line:{color:theme.ref} });
+      s.addShape(pptx.ShapeType.rect, { x:0, y:'92%', w:'100%', h:0.07, fill:{color:theme.bar}, line:{color:theme.bar} });
+
+      const lines = slide.text.split('\n');
+      const runs  = [];
+      lines.forEach((line, idx) => {
+        const m = line.match(/^(\d+)\s+(.+)$/);
+        if (m) {
+          runs.push({ text: m[1]+'  ', options:{ color:theme.ref,  fontSize:36, bold:true, fontFace:'KotRA Gothic Bold' } });
+          runs.push({ text: m[2],       options:{ color:theme.text, fontSize:48, bold:true, fontFace:'KotRA Gothic Bold' } });
+        } else {
+          runs.push({ text: line,       options:{ color:theme.text, fontSize:48, bold:true, fontFace:'KotRA Gothic Bold' } });
+        }
+        if (idx < lines.length - 1) runs.push({ text:'\n', options:{} });
+      });
+
+      s.addText(runs, { x:0.7, y:0.65, w:'86%', h:'76%', align:'center', valign:'middle', wrap:true, lineSpacingMultiple:1.4 });
+      s.addText(`${slide.ref}  |  ${slide.version}`, {
+        x:0.5, y:'86%', w:'90%', h:0.48,
+        fontSize:16, color:theme.ref, fontFace:'KotRA Gothic Bold', align:'right',
+      });
+    }
+
+    const today = new Date().toLocaleDateString('ko-KR').replace(/\.\s*/g,'-').replace(/-$/,'');
+    await pptx.writeFile({ fileName:`성경PPT_${today}.pptx` });
+    status.textContent = `✓ 다운로드 완료 (${slidesData.length}슬라이드)`;
+    status.className = 'status ok';
+  } catch(e) {
+    status.textContent = 'PPT 오류: ' + e.message;
+    status.className = 'status err';
+  }
+  btn.disabled = false;
+}
+
+document.getElementById('verseInput').addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'Enter') buildSlides();
+});
+</script>
+</body>
+</html>
